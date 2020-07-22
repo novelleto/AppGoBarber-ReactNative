@@ -14,6 +14,8 @@ import { useNavigation } from '@react-navigation/native';
 import { Form } from '@unform/mobile';
 import { FormHandles } from '@unform/core';
 
+import { useAuth } from '../../hooks/auth';
+
 import getValidationErrors from '../../utils/getValidationErrors';
 
 import Input from '../../components/Input';
@@ -38,37 +40,42 @@ interface SignInFormData {
 const SignIn: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
   const passwordInputRef = useRef<TextInput>(null);
+
   const navigation = useNavigation();
 
-  const handleSignIn = useCallback(async (data: SignInFormData) => {
-    try {
-      formRef.current?.setErrors({});
+  const { signIn } = useAuth();
 
-      const schema = Yup.object().shape({
-        email: Yup.string()
-          .required('Digite seu E-mail')
-          .email('Digite um e-mail válido'),
-        password: Yup.string().required('Digite sua senha'),
-      });
-      await schema.validate(data, {
-        abortEarly: false,
-      });
+  const handleSignIn = useCallback(
+    async (data: SignInFormData) => {
+      try {
+        formRef.current?.setErrors({});
 
-      // await signIn({
-      //  email: data.email,
-      //  password: data.password,
-      // });
-      // history.push('/dashboard');
-    } catch (err) {
-      if (err instanceof Yup.ValidationError) {
-        const errors = getValidationErrors(err);
-        formRef.current?.setErrors(errors);
-        return;
+        const schema = Yup.object().shape({
+          email: Yup.string()
+            .required('Digite seu E-mail')
+            .email('Digite um e-mail válido'),
+          password: Yup.string().required('Digite sua senha'),
+        });
+        await schema.validate(data, {
+          abortEarly: false,
+        });
+
+        await signIn({
+          email: data.email,
+          password: data.password,
+        });
+      } catch (err) {
+        if (err instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(err);
+          formRef.current?.setErrors(errors);
+          return;
+        }
+
+        Alert.alert('Erro de autenticação', 'Verifique seu usuário e senha!');
       }
-
-      Alert.alert('Erro de autenticação', 'Verifique seu usuário e senha!');
-    }
-  }, []);
+    },
+    [signIn],
+  );
 
   return (
     <>
@@ -125,7 +132,7 @@ const SignIn: React.FC = () => {
 
             <ForgotPassword
               onPress={() => {
-                console.log('deu');
+                console.log('deu');                                             // eslint-disable-line
               }}
             >
               <ForgotPasswordText>Esqueci minha senha</ForgotPasswordText>
